@@ -1,0 +1,267 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Customer List</h1>
+    <div style="display: flex; justify-content: center; align-items: center;">
+        <button onclick="openAddModal()">Add Customer</button>
+        <button onclick="syncChanges()">Sync Changes</button>
+    </div>
+    <table id="customerTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Address</th>
+                <th>City</th>
+                <th>State</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Customer records will be dynamically populated here -->
+        </tbody>
+    </table>
+
+    <!-- Edit Customer Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Customer</h2>
+            <form id="editForm">
+                <label for="editId">ID:</label>
+                <input type="text" id="editId" name="editId" readonly><br>
+                <label for="editFirstName">First Name:</label>
+                <input type="text" id="editFirstName" name="editFirstName"><br>
+                <label for="editLastName">Last Name:</label>
+                <input type="text" id="editLastName" name="editLastName"><br>
+                <label for="editAddress">Address:</label>
+                <input type="text" id="editAddress" name="editAddress"><br>
+                <label for="editCity">City:</label>
+                <input type="text" id="editCity" name="editCity"><br>
+                <label for="editState">State:</label>
+                <input type="text" id="editState" name="editState"><br>
+                <label for="editEmail">Email:</label>
+                <input type="email" id="editEmail" name="editEmail"><br>
+                <label for="editPhone">Phone:</label>
+                <input type="text" id="editPhone" name="editPhone"><br>
+                <button type="submit">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddModal()">&times;</span>
+            <h2>Add Customer</h2>
+            <form id="addForm">
+                <label for="addFirstName">First Name:</label>
+                <input type="text" id="addFirstName" name="addFirstName"><br>
+                <label for="addLastName">Last Name:</label>
+                <input type="text" id="addLastName" name="addLastName"><br>
+                <label for="addAddress">Address:</label>
+                <input type="text" id="addAddress" name="addAddress"><br>
+                <label for="addCity">City:</label>
+                <input type="text" id="addCity" name="addCity"><br>
+                <label for="addState">State:</label>
+                <input type="text" id="addState" name="addState"><br>
+                <label for="addEmail">Email:</label>
+                <input type="email" id="addEmail" name="addEmail"><br>
+                <label for="addPhone">Phone:</label>
+                <input type="text" id="addPhone" name="addPhone"><br>
+                <button type="submit">Add Customer</button>
+            </form>
+        </div>
+    </div>
+
+    
+
+    <script>
+        let customers = []; // Array to store customer records
+
+        function renderCustomers() {
+            const tableBody = document.querySelector('#customerTable tbody');
+            tableBody.innerHTML = '';
+
+            customers.forEach(customer => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${customer.id}</td>
+                    <td>${customer.firstName}</td>
+                    <td>${customer.lastName}</td>
+                    <td>${customer.address}</td>
+                    <td>${customer.city}</td>
+                    <td>${customer.state}</td>
+                    <td>${customer.email}</td>
+                    <td>${customer.phone}</td>
+                    <td>
+                        <button onclick="openEditModal(${customer.id})">Edit</button>
+                        <button onclick="deleteCustomer(${customer.id})">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+
+        function openEditModal(customerId) {
+            const customer = customers.find(c => c.id === customerId);
+            if (customer) {
+                const modal = document.getElementById('editModal');
+                const editForm = document.getElementById('editForm');
+                const editIdInput = document.getElementById('editId');
+                const editFirstNameInput = document.getElementById('editFirstName');
+                const editLastNameInput = document.getElementById('editLastName');
+                const editAddressInput = document.getElementById('editAddress');
+                const editCityInput = document.getElementById('editCity');
+                const editStateInput = document.getElementById('editState');
+                const editEmailInput = document.getElementById('editEmail');
+                const editPhoneInput = document.getElementById('editPhone');
+
+                editIdInput.value = customer.id;
+                editFirstNameInput.value = customer.firstName;
+                editLastNameInput.value = customer.lastName;
+                editAddressInput.value = customer.address;
+                editCityInput.value = customer.city;
+                editStateInput.value = customer.state;
+                editEmailInput.value = customer.email;
+                editPhoneInput.value = customer.phone;
+
+                modal.style.display = 'block';
+
+                // Handle form submission
+                editForm.onsubmit = function(event) {
+                    event.preventDefault();
+                    customer.firstName = editFirstNameInput.value;
+                    customer.lastName = editLastNameInput.value;
+                    customer.address = editAddressInput.value;
+                    customer.city = editCityInput.value;
+                    customer.state = editStateInput.value;
+                    customer.email = editEmailInput.value;
+                    customer.phone = editPhoneInput.value;
+                    modal.style.display = 'none';
+                    renderCustomers(); // Update the table in the front-end
+                };
+            }
+        }
+
+
+        function closeEditModal() {
+            const modal = document.getElementById('editModal');
+            modal.style.display = 'none';
+        }
+
+        function deleteCustomer(customerId) {
+            const index = customers.findIndex(c => c.id === customerId);
+            if (index !== -1) {
+                customers.splice(index, 1);
+                renderCustomers(); // Update the table in the front-end
+            }
+        }
+
+        function openAddModal() {
+            const modal = document.getElementById('addModal');
+            const addForm = document.getElementById('addForm');
+            modal.style.display = 'block';
+
+            // Handle form submission
+            addForm.onsubmit = function(event) {
+                event.preventDefault();
+                const addFirstNameInput = document.getElementById('addFirstName');
+                const addLastNameInput = document.getElementById('addLastName');
+                const addAddressInput = document.getElementById('addAddress');
+                const addCityInput = document.getElementById('addCity');
+                const addStateInput = document.getElementById('addState');
+                const addEmailInput = document.getElementById('addEmail');
+                const addPhoneInput = document.getElementById('addPhone');
+                
+                const newCustomer = {
+                    id: customers.length + 1,
+                    firstName: addFirstNameInput.value,
+                    lastName: addLastNameInput.value,
+                    address: addAddressInput.value,
+                    city: addCityInput.value,
+                    state: addStateInput.value,
+                    email: addEmailInput.value,
+                    phone: addPhoneInput.value
+                };
+                
+                customers.push(newCustomer);
+                modal.style.display = 'none';
+                renderCustomers(); // Update the table in the front-end
+                addForm.reset(); // Clear the form inputs
+            };
+        }
+
+
+        function closeAddModal() {
+            const modal = document.getElementById('addModal');
+            modal.style.display = 'none';
+        }
+
+        function syncChanges() {
+            // Assuming you have a function to fetch the JWT token
+            const token = getToken();
+            fetch('/api/sync', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(customers)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Changes synced successfully!');
+                    customers = []; // Clear the modified records array
+                    renderCustomers(); // Update the table in the front-end
+                } else {
+                    alert('Failed to sync changes.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while syncing changes.');
+            });
+        }
+
+        // Dummy data for testing (replace with actual data fetching logic)
+        customers = [
+            { 
+                id: 1, 
+                firstName: 'John', 
+                lastName: 'Doe', 
+                address: '123 Elm St', 
+                city: 'Springfield', 
+                state: 'IL', 
+                email: 'john@example.com', 
+                phone: '555-1234' 
+            },
+            { 
+                id: 2, 
+                firstName: 'Jane', 
+                lastName: 'Doe', 
+                address: '456 Oak St', 
+                city: 'Shelbyville', 
+                state: 'IL', 
+                email: 'jane@example.com', 
+                phone: '555-5678' 
+            }
+        ];
+
+
+        // Initial rendering of customers
+        renderCustomers();
+    </script>
+</body>
+</html>
