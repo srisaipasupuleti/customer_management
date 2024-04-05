@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +9,18 @@
 <body>
     <h1>Customer List</h1>
     <div style="display: flex; justify-content: center; align-items: center;">
+        <div class="search-container">
+            <label for="searchBy">Search By:</label>
+            <select id="searchBy">
+                <option value="firstName">First Name</option>
+                <option value="lastName">Last Name</option>
+                <option value="email">Email</option>
+                <option value="phone">Phone</option>
+            </select>
+            <input type="text" id="searchValue" placeholder="Enter search value">
+            <button onclick="searchCustomers()">Search</button>
+        </div>
+
         <button onclick="openAddModal()">Add Customer</button>
         <button onclick="syncChanges()">Sync Changes</button>
     </div>
@@ -54,7 +65,7 @@
                 <input type="email" id="editEmail" name="editEmail"><br>
                 <label for="editPhone">Phone:</label>
                 <input type="text" id="editPhone" name="editPhone"><br>
-                <button type="submit">Save Changes</button>
+                <button type="button" onclick="saveEditedCustomer()">Save Changes</button>
             </form>
         </div>
     </div>
@@ -79,12 +90,10 @@
                 <input type="email" id="addEmail" name="addEmail"><br>
                 <label for="addPhone">Phone:</label>
                 <input type="text" id="addPhone" name="addPhone"><br>
-                <button type="submit">Add Customer</button>
+                <button type="button" onclick="addCustomer()">Add Customer</button>
             </form>
         </div>
     </div>
-
-    
 
     <script>
         let customers = []; // Array to store customer records
@@ -113,12 +122,30 @@
             });
         }
 
+        function searchCustomers() {
+            const searchBy = document.getElementById('searchBy').value;
+            const searchValue = document.getElementById('searchValue').value;
+
+            // Example: Fetch data from the server using the search parameters
+            console.log(searchBy+","+searchValue);
+            fetch(`/api/search?${searchBy}=${searchValue}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Handle the fetched data, such as updating the customers array and rendering
+                    customers = data; // Assuming the API returns the updated customer list
+                    renderCustomers(); // Update the table in the front-end
+                })
+                .catch(error => {
+                    console.error('Error searching customers:', error);
+                    alert('An error occurred while searching customers.');
+                });
+        }
+
 
         function openEditModal(customerId) {
             const customer = customers.find(c => c.id === customerId);
             if (customer) {
                 const modal = document.getElementById('editModal');
-                const editForm = document.getElementById('editForm');
                 const editIdInput = document.getElementById('editId');
                 const editFirstNameInput = document.getElementById('editFirstName');
                 const editLastNameInput = document.getElementById('editLastName');
@@ -138,71 +165,142 @@
                 editPhoneInput.value = customer.phone;
 
                 modal.style.display = 'block';
-
-                // Handle form submission
-                editForm.onsubmit = function(event) {
-                    event.preventDefault();
-                    customer.firstName = editFirstNameInput.value;
-                    customer.lastName = editLastNameInput.value;
-                    customer.address = editAddressInput.value;
-                    customer.city = editCityInput.value;
-                    customer.state = editStateInput.value;
-                    customer.email = editEmailInput.value;
-                    customer.phone = editPhoneInput.value;
-                    modal.style.display = 'none';
-                    renderCustomers(); // Update the table in the front-end
-                };
             }
         }
-
 
         function closeEditModal() {
             const modal = document.getElementById('editModal');
             modal.style.display = 'none';
         }
 
+        function saveEditedCustomer() {
+            const editIdInput = document.getElementById('editId');
+            const editFirstNameInput = document.getElementById('editFirstName');
+            const editLastNameInput = document.getElementById('editLastName');
+            const editAddressInput = document.getElementById('editAddress');
+            const editCityInput = document.getElementById('editCity');
+            const editStateInput = document.getElementById('editState');
+            const editEmailInput = document.getElementById('editEmail');
+            const editPhoneInput = document.getElementById('editPhone');
+            const customerId = parseInt(editIdInput.value);
+
+            const editedCustomer = {
+                id: customerId,
+                firstName: editFirstNameInput.value,
+                lastName: editLastNameInput.value,
+                address: editAddressInput.value,
+                city: editCityInput.value,
+                state: editStateInput.value,
+                email: editEmailInput.value,
+                phone: editPhoneInput.value
+            };
+
+            // Assuming you have a function to fetch the JWT token
+            const token = getToken();
+            fetch(`/api/customers/${customerId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(editedCustomer)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Customer updated successfully!');
+                    const index = customers.findIndex(c => c.id === customerId);
+                    if (index !== -1) {
+                        customers[index] = editedCustomer;
+                        renderCustomers(); // Update the table in the front-end
+                    }
+                    closeEditModal();
+                } else {
+                    alert('Failed to update customer.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating customer.');
+            });
+        }
+
         function deleteCustomer(customerId) {
-            const index = customers.findIndex(c => c.id === customerId);
-            if (index !== -1) {
-                customers.splice(index, 1);
-                renderCustomers(); // Update the table in the front-end
-            }
+            // Assuming you have a function to fetch the JWT token
+            const token = getToken();
+            fetch(`/api/customers/${customerId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Customer deleted successfully!');
+                    const index = customers.findIndex(c => c.id === customerId);
+                    if (index !== -1) {
+                        customers.splice(index, 1);
+                        renderCustomers(); // Update the table in the front-end
+                    }
+                } else {
+                    alert('Failed to delete customer.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting customer.');
+            });
+        }
+
+        function addCustomer() {
+            const addFirstNameInput = document.getElementById('addFirstName');
+            const addLastNameInput = document.getElementById('addLastName');
+            const addAddressInput = document.getElementById('addAddress');
+            const addCityInput = document.getElementById('addCity');
+            const addStateInput = document.getElementById('addState');
+            const addEmailInput = document.getElementById('addEmail');
+            const addPhoneInput = document.getElementById('addPhone');
+
+            const newCustomer = {
+                id: customers.length + 1,
+                firstName: addFirstNameInput.value,
+                lastName: addLastNameInput.value,
+                address: addAddressInput.value,
+                city: addCityInput.value,
+                state: addStateInput.value,
+                email: addEmailInput.value,
+                phone: addPhoneInput.value
+            };
+
+            // Assuming you have a function to fetch the JWT token
+            const token = getToken();
+            fetch('/api/customers', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newCustomer)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Customer added successfully!');
+                    customers.push(newCustomer);
+                    renderCustomers(); // Update the table in the front-end
+                    closeAddModal();
+                } else {
+                    alert('Failed to add customer.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding customer.');
+            });
         }
 
         function openAddModal() {
             const modal = document.getElementById('addModal');
-            const addForm = document.getElementById('addForm');
             modal.style.display = 'block';
-
-            // Handle form submission
-            addForm.onsubmit = function(event) {
-                event.preventDefault();
-                const addFirstNameInput = document.getElementById('addFirstName');
-                const addLastNameInput = document.getElementById('addLastName');
-                const addAddressInput = document.getElementById('addAddress');
-                const addCityInput = document.getElementById('addCity');
-                const addStateInput = document.getElementById('addState');
-                const addEmailInput = document.getElementById('addEmail');
-                const addPhoneInput = document.getElementById('addPhone');
-                
-                const newCustomer = {
-                    id: customers.length + 1,
-                    firstName: addFirstNameInput.value,
-                    lastName: addLastNameInput.value,
-                    address: addAddressInput.value,
-                    city: addCityInput.value,
-                    state: addStateInput.value,
-                    email: addEmailInput.value,
-                    phone: addPhoneInput.value
-                };
-                
-                customers.push(newCustomer);
-                modal.style.display = 'none';
-                renderCustomers(); // Update the table in the front-end
-                addForm.reset(); // Clear the form inputs
-            };
         }
-
 
         function closeAddModal() {
             const modal = document.getElementById('addModal');
@@ -213,27 +311,31 @@
             // Assuming you have a function to fetch the JWT token
             const token = getToken();
             fetch('/api/sync', {
-                method: 'POST',
+                method: 'GET', // Use GET method to fetch data
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(customers)
+                }
             })
             .then(response => {
                 if (response.ok) {
-                    alert('Changes synced successfully!');
-                    customers = []; // Clear the modified records array
-                    renderCustomers(); // Update the table in the front-end
+                    return response.json(); // Parse response as JSON
                 } else {
-                    alert('Failed to sync changes.');
+                    throw new Error('Failed to fetch customer data.');
                 }
+            })
+            .then(data => {
+                // Update customers array with fresh data from the server
+                customers = data;
+                renderCustomers(); // Update the table in the front-end
+                alert('Customer data synced successfully!');
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while syncing changes.');
+                alert('An error occurred while syncing customer data.');
             });
         }
+
 
         // Dummy data for testing (replace with actual data fetching logic)
         customers = [
